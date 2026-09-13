@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.npm-cache/
+.shots/
+.chrome-*/
+*.log
+.DS_Store
+.vite/
+coverage/
+e2e/out/
+release/

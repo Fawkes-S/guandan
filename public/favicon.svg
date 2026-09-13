@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="掼蛋">
+  <rect width="512" height="512" rx="112" fill="#f4f1e8"/>
+  <rect x="104" y="104" width="304" height="304" rx="52" fill="#b23a2f"/>
+  <text x="256" y="268" text-anchor="middle" dominant-baseline="central"
+        font-family="Songti SC, STSong, Noto Serif SC, serif" font-size="216" font-weight="700"
+        fill="#f4f1e8">掼</text>
+</svg>

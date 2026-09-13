@@ -1,0 +1,30 @@
+{
+  "name": "guandan",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "江苏规则单机掼蛋 · 水墨极简",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "bench": "vitest run src/test/aiBench.test.ts --reporter=verbose",
+    "check": "tsc --noEmit",
+    "e2e": "node e2e/hand-drag.mjs",
+    "build:single": "node scripts/build-single.mjs",
+    "share": "node scripts/share.mjs",
+    "pack": "npm run build && npm run build:single && node scripts/pack.mjs"
+  },
+  "devDependencies": {
+    "jsdom": "^30.0.1",
+    "playwright": "^1.63.0",
+    "qrcode-terminal": "^0.12.0",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.11",
+    "vite-plugin-pwa": "^1.3.0",
+    "vite-plugin-singlefile": "^2.3.3",
+    "vitest": "^2.1.8"
+  }
+}
