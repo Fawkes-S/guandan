@@ -513,3 +513,34 @@ describe('同花顺快捷查找', () => {
     // 所有种子都有同花顺也是可能的（逢人配让同花顺变多），那就跳过
   });
 });
+
+describe('帮助面板完整性', () => {
+  it('快捷键条目不重复、不矛盾，且关键快捷键都在', async () => {
+    const { HELP_ITEMS } = await import('../ui/panel');
+    const keys = HELP_ITEMS.map(([k]) => k);
+    // 之前脚本反复追加，导致「双击手牌」出现两次且说法相反 —— 这里钉死不许重复
+    expect(new Set(keys).size).toBe(keys.length);
+    const all = keys.join(' | ');
+    for (const need of [
+      '同花顺 / F',
+      '提示 / H',
+      '理牌 / S',
+      '成组 / G',
+      '拆组 / U',
+      '不要 / 空格 / P',
+      '出牌 / 回车',
+      '点牌桌',
+    ]) {
+      expect(all).toContain(need);
+    }
+  });
+
+  it('面板里写的按键，键盘处理里真的有对应分支', async () => {
+    // 用 Vite 的 ?raw 直接读源码，避免依赖 node 类型
+    const src = (await import('../ui/app.ts?raw')).default as unknown as string;
+    for (const key of ['f', 'h', 's', 'g', 'u', 'l', 'r', 'm']) {
+      expect(src).toContain(`key === '${key}'`);
+    }
+    expect(src).toContain(`' ' || key === 'spacebar' || key === 'p'`);
+  });
+});

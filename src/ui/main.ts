@@ -16,6 +16,16 @@ const app = mount(root, {
   rules: spectate ? { aiDelayMs: 520 } : {},
 });
 
+// PWA 自动更新：新版本 Service Worker 接管后自动刷新一次，
+// 否则玩家会一直看到预缓存里的旧界面（这正是"改动已发布但页面没变"的原因）。
+if ('serviceWorker' in navigator) {
+  let hadController = Boolean(navigator.serviceWorker.controller);
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (hadController) window.location.reload();
+    hadController = true;
+  });
+}
+
 // 开发期把实例挂到 window，方便调试与自动化对局分析
 if (import.meta.env.DEV) {
   (window as unknown as { __guandan?: unknown }).__guandan = app;
