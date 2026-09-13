@@ -282,6 +282,22 @@ interface Params {
   randomPass: number;
 }
 
+/**
+ * 炸弹的"牌力代价"阶梯 —— 必须随压制力单调递增。
+ *
+ * 这样 AI 才会先用够用的小炸：面对必须用炸的场面，4 张炸 < 5 张炸 < 同花顺 < 6 张炸……
+ * 之前同花顺在"只有炸弹能压"的场面反而免罚，导致 AI 拿着 4 张 K 炸不用、直接烧同花顺。
+ */
+function bombCost(combo: Combo, params: Params): number {
+  if (!combo.isBomb) return 0;
+  // 斜率要足够陡：相邻档之间的差距必须压过"手牌估值"里 1 手 = 100 分的波动，
+  // 否则 AI 会因为"出小炸之后手牌估值差一点"而改用大炸。
+  // 下限仍是 bombPenalty（决定"到底要不要炸"），上限封顶避免超大炸永不出手。
+  const over = Math.max(0, combo.power - bombPower(4));
+  const mult = Math.min(1 + over * 2.2, 5);
+  return params.bombPenalty * mult;
+}
+
 function paramsFor(difficulty: Difficulty): Params {
   if (difficulty === 'easy') {
     return {
@@ -470,28 +486,18 @@ function chooseFollow(ctx: Ctx): AiDecision {
   const before = evaluateHand(hand, level, rules);
   const lastPlayer = game.lastPlay!.player;
   const partnerLed = lastPlayer === ctx.partner;
-  // 除了同花顺之外，还有没有"不烧炸弹"的压法？
-  // 有 → 用同花顺去压就是白烧一个大炸，要计代价；
-  // 没有 → 它就是唯一手段，正常打。
-  const hasCheaperBeat = options.some(
-    (o) => o.combo.type !== ComboType.StraightFlush && !o.combo.isBomb,
-  );
   const scored: Array<{ ev: OptionEval; score: number }> = [];
 
   for (const opt of options) {
     const ev = evaluateOption(ctx, opt);
     let score = ev.score - before.score;
     const isBomb = opt.combo.isBomb;
-    // 真炸弹与同花顺分开计价：同花顺也是大炸，拿它去压一张普通牌就是白烧，
-    // 但代价要小于拆一颗真炸弹（它同时还能当顺子用）。
-    const isRealBomb = opt.combo.type === ComboType.Bomb || opt.combo.type === ComboType.JokerBomb;
-    const isFlushSpend = opt.combo.type === ComboType.StraightFlush;
     score += spentValue(opt.cards, level) * 2;
 
     if (ev.afterHands === 0) score -= 1_000_000;
 
-    if (isRealBomb || (isFlushSpend && hasCheaperBeat)) {
-      let penalty = isRealBomb ? ctx.params.bombPenalty : ctx.params.flushPenalty;
+    if (isBomb) {
+      let penalty = bombCost(opt.combo, ctx.params);
       if (ctx.oppThreat) penalty -= 95;
       if (ev.afterHands <= 2) penalty -= 45;
       if (ctx.myBombs >= 2) penalty -= 30;
@@ -613,9 +619,10 @@ function chooseLead(ctx: Ctx): AiDecision {
     score += spentValue(opt.cards, level) * 1.5;
 
     if (opt.combo.isBomb) {
+      // 首出时同花顺本质是"清一手 5 张长牌"，不按炸弹计价（否则会把手牌捂烂）；
+      // 真炸弹之间仍然按阶梯排，避免拿 6 张炸去开路。
       const realBomb = opt.combo.type === ComboType.Bomb || opt.combo.type === ComboType.JokerBomb;
-      // 首出时同花顺同样是"清一手 5 张长牌"，不按炸弹计价（否则会把手牌捂烂）
-      let penalty = realBomb ? ctx.params.bombPenalty : 0;
+      let penalty = realBomb ? bombCost(opt.combo, ctx.params) : 0;
       if (ctx.info && ctx.partnerCards === 1) penalty += 40;
       if (ev.afterHands <= 2) penalty -= 40;
       score += Math.max(25, penalty);
