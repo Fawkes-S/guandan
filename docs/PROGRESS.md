@@ -47,6 +47,10 @@
 | R9-2 | 局域网分享 | ✅ | 100% | `npm run share` → 终端二维码 + 本机/局域网双地址 |
 | R9-3 | 一键打包 | ✅ | 100% | `npm run pack` → `掼蛋单机版.zip`（38 KB） |
 | R9-4 | 云端部署方案 | ✅ | 100% | `docs/DEPLOY.md` + GitHub Pages Actions 工作流 |
+| R10-1 | Git 仓库初始化 | ✅ | 100% | `git init` + 首次提交（63 个文件，.git 仅 1.5 MB）|
+| R10-2 | CI 流程本地验证 | ✅ | 100% | 干净克隆实测 `npm ci` → `npm test`（136 全过）→ `npm run build` |
+| R10-3 | 子路径 + PWA 实测 | ✅ | 100% | 把 dist 挂在 `/guandan/` 子路径下：27 张牌正常、manifest/sw 均 200、SW scope 正确注册 |
+| R10-4 | GitHub 操作手册 | ✅ | 100% | `docs/GITHUB.md`：网页/命令行两条路线 + 更新流程 + 常见问题 |
 
 **最终状态**：**136 个单元/集成测试全部通过（10 个文件）** + **真实浏览器 E2E 29/29 通过**；
 另有单文件版（122 KB）与 PWA（`dist/`，预缓存 13 项）两种分发形态，`tsc --noEmit` 无错误，`vite build` 产出约 86 kB JS + 21 kB CSS，Service Worker 预缓存 13 项 / 135 KiB。
@@ -172,6 +176,14 @@
 - **[R9]** 新增 `npm run pack`：打包成 38 KB 的 `掼蛋单机版.zip`（含一份给接收者的 `玩法说明.txt`）。
 - **[R9]** 新增 `docs/DEPLOY.md`：三种方式的完整对照（单文件 / 局域网 / 云端），并说明**复制文件夹到别的电脑时哪些目录不必带**（`node_modules` 155 MB、`.npm-cache` 232 MB 都不用拷）。
 - **[R9]** 新增 `.github/workflows/deploy-pages.yml`：推到 `main` 自动跑测试 + 构建 + 发布 GitHub Pages；因为 `base: './'` 用的是相对路径，子目录部署也能正常工作。
+
+### 第十轮（GitHub：保存 · 管理 · 测试 · 发布）
+
+- **[R10]** 需求确认：能否把项目放上 GitHub，用 GitHub 做保存/管理/测试/发布，最后拿一个网址在任何联网设备上玩。答案是可以，且仓库里早已备好 `.github/workflows/deploy-pages.yml`。
+- **[R10]** 本地初始化 Git 仓库并完成首次提交（63 个文件；`.gitignore` 已排除 `node_modules` 155 MB、`.npm-cache` 232 MB、`dist`、`release`，`.git` 仅 1.5 MB）。
+- **[R10]** **本地完整模拟了一遍 GitHub Actions**：`git clone` 到干净目录 → `npm ci`（408 个包）→ `npm test`（10 文件 / 136 测试全过）→ `npm run build`（PWA 13 项预缓存）。确认云端不会翻车。
+- **[R10]** **实测子路径部署**：把 `dist/` 挂到 `/guandan/` 下（等价于 `https://<用户名>.github.io/guandan/`），用真实浏览器验证：27 张手牌、manifest 200、sw.js 200、**Service Worker 以正确 scope 注册并 active**、零页面错误。这是 GitHub Pages + PWA 能用的关键证据。
+- **[R10]** 产出 `docs/GITHUB.md`：网页操作（不装任何东西）与 `gh` 命令行两条路线、以后如何更新、CI 挂在哪、常见问题。README 同步更新。
 
 ## 后续可做（未列入本轮）
 

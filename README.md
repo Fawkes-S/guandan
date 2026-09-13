@@ -42,10 +42,14 @@ npm run pack           # 上面两个都做，再打成 zip
 | 换台电脑自己玩 | 拷 `release/掼蛋.html`，双击 |
 | 发给朋友、对方想离线玩 | 发 `release/掼蛋单机版.zip`（38 KB） |
 | 一屋子人各自用手机玩 | `npm run share`，扫码 |
-| 发给很多人 / 装成手机 App | `npm run build` 后把 `dist/` 拖到 [Netlify Drop](https://app.netlify.com/drop) |
+| 发给很多人 / 装成手机 App | 推到 GitHub，自动发布到 Pages —— 见 [`docs/GITHUB.md`](docs/GITHUB.md) |
+| 不想用 GitHub | `npm run build` 后把 `dist/` 拖到 [Netlify Drop](https://app.netlify.com/drop) |
 
-完整说明（含 GitHub Pages / Vercel / Cloudflare、以及"复制文件夹到别的电脑时哪些该带"）：
-**[`docs/DEPLOY.md`](docs/DEPLOY.md)**
+- **放到 GitHub 上（推荐）**：保存 / 管理 / 自动测试 / 自动发布一条龙，
+  最后拿到 `https://<用户名>.github.io/guandan/` 这样的网址，任何联网设备打开就能玩。
+  分步操作见 **[`docs/GITHUB.md`](docs/GITHUB.md)**；仓库里已配好 Actions 工作流，本地仓库也已初始化并提交。
+- 其他部署方式（Vercel / Cloudflare / Netlify）与"复制文件夹到别的电脑时哪些该带"：
+  **[`docs/DEPLOY.md`](docs/DEPLOY.md)**
 
 ## 快速开始
 
@@ -297,5 +301,6 @@ guandan/
 
 - [`docs/PLAN.md`](docs/PLAN.md) — 完整开发计划、视觉方案、里程碑与验收标准
 - [`docs/RULES.md`](docs/RULES.md) — 规则基线与可配置分歧点
+- [`docs/GITHUB.md`](docs/GITHUB.md) — 放到 GitHub 上：保存 / 管理 / 测试 / 发布全流程
 - [`docs/DEPLOY.md`](docs/DEPLOY.md) — 带走 / 分享 / 部署的完整方案
 - [`docs/PROGRESS.md`](docs/PROGRESS.md) — 实时进度与变更日志
