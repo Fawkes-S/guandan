@@ -184,9 +184,16 @@ export function detectCombos(
   if (cached) return cached;
 
   const found = new Map<string, Combo>();
+  /**
+   * 只把**真正发生了替代**的逢人配记进 wildAs。
+   * 红桃级牌当自己用（例如凑一对级牌、或在顺子里按自然点数站位）不算"使用逢人配"，
+   * 否则玩家会看到"这手牌没用到逢人配却标着含配"。
+   */
   const push = (combo: Combo | null, wildAs?: WildAs[]) => {
     if (!combo) return;
-    if (wildAs && wildAs.length > 0) combo.wildAs = wildAs;
+    const real = (wildAs ?? []).filter((a) => !(a.suit === 'H' && a.rank === level));
+    if (real.length > 0) combo.wildAs = real;
+    else delete combo.wildAs;
     const k = comboKey(combo);
     if (!found.has(k)) found.set(k, combo);
   };

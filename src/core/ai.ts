@@ -269,6 +269,8 @@ export function isLikelyUnbeatable(game: GuandanGame, player: number, combo: Com
 
 interface Params {
   bombPenalty: number;
+  /** 用同花顺去压一张普通牌型的代价（小于拆真炸弹，但绝不该白烧） */
+  flushPenalty: number;
   partnerPass: number;
   threatBonus: number;
   followBonus: number;
@@ -284,6 +286,7 @@ function paramsFor(difficulty: Difficulty): Params {
   if (difficulty === 'easy') {
     return {
       bombPenalty: 55,
+      flushPenalty: 25,
       partnerPass: 120,
       threatBonus: 0,
       followBonus: 0,
@@ -297,6 +300,7 @@ function paramsFor(difficulty: Difficulty): Params {
   if (difficulty === 'hard') {
     return {
       bombPenalty: 200,
+      flushPenalty: 85,
       partnerPass: 260,
       threatBonus: 210,
       followBonus: 30,
@@ -309,6 +313,7 @@ function paramsFor(difficulty: Difficulty): Params {
   }
   return {
     bombPenalty: 140,
+    flushPenalty: 60,
     partnerPass: 200,
     threatBonus: 0,
     followBonus: 25,
@@ -465,21 +470,28 @@ function chooseFollow(ctx: Ctx): AiDecision {
   const before = evaluateHand(hand, level, rules);
   const lastPlayer = game.lastPlay!.player;
   const partnerLed = lastPlayer === ctx.partner;
+  // 除了同花顺之外，还有没有"不烧炸弹"的压法？
+  // 有 → 用同花顺去压就是白烧一个大炸，要计代价；
+  // 没有 → 它就是唯一手段，正常打。
+  const hasCheaperBeat = options.some(
+    (o) => o.combo.type !== ComboType.StraightFlush && !o.combo.isBomb,
+  );
   const scored: Array<{ ev: OptionEval; score: number }> = [];
 
   for (const opt of options) {
     const ev = evaluateOption(ctx, opt);
     let score = ev.score - before.score;
     const isBomb = opt.combo.isBomb;
-    // 同花顺本身就是顺子的"免费升级"：这 5 张牌本来就要当顺子打出去，
-    // 所以不该按炸弹计成本，否则 AI 会把手里的同花顺一路捂到烂。
+    // 真炸弹与同花顺分开计价：同花顺也是大炸，拿它去压一张普通牌就是白烧，
+    // 但代价要小于拆一颗真炸弹（它同时还能当顺子用）。
     const isRealBomb = opt.combo.type === ComboType.Bomb || opt.combo.type === ComboType.JokerBomb;
+    const isFlushSpend = opt.combo.type === ComboType.StraightFlush;
     score += spentValue(opt.cards, level) * 2;
 
     if (ev.afterHands === 0) score -= 1_000_000;
 
-    if (isRealBomb) {
-      let penalty = ctx.params.bombPenalty;
+    if (isRealBomb || (isFlushSpend && hasCheaperBeat)) {
+      let penalty = isRealBomb ? ctx.params.bombPenalty : ctx.params.flushPenalty;
       if (ctx.oppThreat) penalty -= 95;
       if (ev.afterHands <= 2) penalty -= 45;
       if (ctx.myBombs >= 2) penalty -= 30;
@@ -601,7 +613,9 @@ function chooseLead(ctx: Ctx): AiDecision {
     score += spentValue(opt.cards, level) * 1.5;
 
     if (opt.combo.isBomb) {
-      let penalty = ctx.params.bombPenalty;
+      const realBomb = opt.combo.type === ComboType.Bomb || opt.combo.type === ComboType.JokerBomb;
+      // 首出时同花顺同样是"清一手 5 张长牌"，不按炸弹计价（否则会把手牌捂烂）
+      let penalty = realBomb ? ctx.params.bombPenalty : 0;
       if (ctx.info && ctx.partnerCards === 1) penalty += 40;
       if (ev.afterHands <= 2) penalty -= 40;
       score += Math.max(25, penalty);

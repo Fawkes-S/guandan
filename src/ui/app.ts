@@ -2,10 +2,10 @@ import './style.css';
 import { GuandanGame } from '../core/engine';
 import { aiStep } from '../core/autoplay';
 import { enumeratePlays, explainCards, type PlayOption } from '../core/candidates';
-import { levelText } from '../core/cards';
+import { levelText, rankText } from '../core/cards';
 import { teammateOf, type RuleConfig } from '../core/rules';
 import type { Difficulty } from '../core/ai';
-import type { Card, Combo } from '../core/types';
+import { ComboType, SUIT_SYMBOL, isWild, type Card, type Combo } from '../core/types';
 import { bombEffect, captureRects, floatBubble, flyPlay, motion, playFlip, pulse, stagger } from './anim';
 import {
   renderCountPanel,
@@ -71,6 +71,8 @@ export class App {
   private timer: number | null = null;
   private hintPool: PlayOption[] = [];
   private hintIndex = 0;
+  private flushPool: PlayOption[] = [];
+  private flushIndex = 0;
   private difficulty: Difficulty;
   private options: AppOptions;
   private sortMode: SortMode = 'rank';
@@ -209,6 +211,7 @@ export class App {
             <button class="btn btn-primary" id="btn-play">出牌</button>
             <button class="btn" id="btn-pass">不要</button>
             <button class="btn" id="btn-hint">提示</button>
+            <button class="btn" id="btn-flush" title="找出手牌里能组的同花顺 (F)">同花顺</button>
             <button class="btn" id="btn-sort">理牌</button>
             <span class="action-sep"></span>
             <button class="btn" id="btn-group" title="把选中的牌组成一组 (G)">成组</button>
@@ -257,6 +260,7 @@ export class App {
       btnHint: q<HTMLButtonElement>('btn-hint'),
       btnClear: q<HTMLButtonElement>('btn-clear'),
       btnSort: q<HTMLButtonElement>('btn-sort'),
+      btnFlush: q<HTMLButtonElement>('btn-flush'),
       btnGroup: q<HTMLButtonElement>('btn-group'),
       btnUngroup: q<HTMLButtonElement>('btn-ungroup'),
       modal: q('modal'),
@@ -296,6 +300,10 @@ export class App {
       this.render();
     });
     this.refs.btnSort.addEventListener('click', () => this.cycleSort());
+    this.refs.btnFlush.addEventListener('click', () => {
+      sfx.play('click');
+      this.onFindFlush();
+    });
     this.refs.btnGroup.addEventListener('click', () => {
       sfx.play('click');
       this.groupSelection();
@@ -901,6 +909,10 @@ export class App {
       this.onHint();
       return;
     }
+    if (key === 'f') {
+      this.onFindFlush();
+      return;
+    }
     if (key === 's') {
       this.cycleSort();
       return;
@@ -1099,6 +1111,8 @@ export class App {
     this.game.startRound();
     this.hintPool = [];
     this.hintIndex = 0;
+    this.flushPool = [];
+    this.flushIndex = 0;
     this.roundInitialHands = null;
     this.lastLogLength = -1;
     this.state.selected.clear();
@@ -1418,6 +1432,8 @@ export class App {
       this.state.selected.clear();
       this.hintPool = [];
       this.hintIndex = 0;
+      this.flushPool = [];
+      this.flushIndex = 0;
       this.state.message = '';
       this.state.messageKind = 'info';
       this.afterStep();
@@ -1457,6 +1473,40 @@ export class App {
     } catch (err) {
       this.fail(err);
     }
+  }
+
+  /** 找出手牌里所有能组的同花顺（含逢人配帮忙补的），循环选中 */
+  private onFindFlush(): void {
+    const g = this.game;
+    if (this.spectating) return;
+    if (this.flushPool.length === 0) {
+      this.flushPool = enumeratePlays(g.hands[this.human], g.level, null, g.rules).filter(
+        (o) => o.combo.type === ComboType.StraightFlush,
+      );
+      this.flushIndex = 0;
+    }
+    if (this.flushPool.length === 0) {
+      this.state.message = '手里没有能组的同花顺';
+      this.state.messageKind = 'error';
+      sfx.play('error');
+      this.render();
+      return;
+    }
+    const opt = this.flushPool[this.flushIndex % this.flushPool.length];
+    this.flushIndex += 1;
+    this.state.selected = new Set(opt.cards.map((c) => c.id));
+    // 说清楚是哪个花色的哪一段，否则两个同花顺看起来一模一样
+    const base = opt.cards.find((c) => !isWild(c, this.game.level)) ?? opt.cards[0];
+    const bottom = opt.combo.rank - 4;
+    const low = bottom === 1 ? 'A' : rankText(bottom);
+    const range = `${SUIT_SYMBOL[base.suit]}${low}–${rankText(opt.combo.rank)}`;
+    const usedWild = opt.combo.wildAs?.length ? '（用逢人配）' : '';
+    this.state.message = `同花顺 ${((this.flushIndex - 1) % this.flushPool.length) + 1}/${
+      this.flushPool.length
+    }：${range}${usedWild}`;
+    this.state.messageKind = 'info';
+    sfx.play('select');
+    this.refreshSelection();
   }
 
   private onHint(): void {

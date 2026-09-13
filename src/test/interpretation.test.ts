@@ -82,3 +82,51 @@ describe('一手多解时取最强解释', () => {
     if (res.ok) expect(res.combo.rank).toBe(7);
   });
 });
+
+/**
+ * 回归：wildAs 只标"真正发生了替代"的逢人配。
+ * 红桃级牌当自己用（凑对级牌、在顺子里按自然点数站位）不算使用逢人配，
+ * 否则玩家会看到「这手牌没用到逢人配却标着含配」。
+ */
+describe('逢人配标记的准确性', () => {
+  it('红桃2 单出当级牌用 → 不标逢人配', () => {
+    const combos = detectCombos(H('H2'), 2);
+    const natural = combos.find((c) => c.rank === 15);
+    expect(natural).toBeTruthy();
+    expect(natural!.wildAs).toBeUndefined();
+  });
+
+  it('红桃2 + 黑桃2 组成对级牌 → 不标逢人配', () => {
+    const combos = detectCombos(H('H2', 'S2'), 2);
+    const pair = combos.find((c) => c.type === ComboType.Pair && c.rank === 15);
+    expect(pair).toBeTruthy();
+    expect(pair!.wildAs).toBeUndefined();
+  });
+
+  it('红桃2 在 23456 顺子里按自然点数 → 不标逢人配', () => {
+    const combos = detectCombos(H('H2', 'S3', 'D4', 'C5', 'S6'), 2);
+    const straight = combos.find((c) => c.type === ComboType.Straight && c.rank === 6);
+    expect(straight).toBeTruthy();
+    expect(straight!.wildAs).toBeUndefined();
+  });
+
+  it('红桃2 顶替红桃9 成同花顺 → 标出它当成了什么', () => {
+    const combos = detectCombos(H('H7', 'H8', 'H2', 'H10', 'HJ'), 2);
+    const sf = combos.find((c) => c.type === ComboType.StraightFlush);
+    expect(sf).toBeTruthy();
+    expect(sf!.wildAs).toHaveLength(1);
+    expect(sf!.wildAs![0].rank).toBe(9);
+    expect(sf!.wildAs![0].suit).toBe('H');
+  });
+
+  it('两张逢人配只标真正替代的那张', () => {
+    // 红桃2 + 红桃2 + 3 4 5 → 可当 2/3/4/5/6（一张当 2、一张当 6）
+    const combos = detectCombos(H('H2', 'H2', 'S3', 'D4', 'C5'), 2);
+    const straight = combos.find((c) => c.type === ComboType.Straight && c.rank === 6);
+    if (straight?.wildAs) {
+      // 至多两张，且每张都必须真的改变了点数或花色
+      expect(straight.wildAs.length).toBeLessThanOrEqual(2);
+      for (const w of straight.wildAs) expect(w.suit === 'H' && w.rank === 2).toBe(false);
+    }
+  });
+});

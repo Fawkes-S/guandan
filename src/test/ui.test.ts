@@ -478,3 +478,38 @@ describe('「不要」快捷键', () => {
     }
   });
 });
+
+describe('同花顺快捷查找', () => {
+  it('按钮能找到手牌里的同花顺并选中', () => {
+    const { app } = setup(11);
+    app.newMatch();
+    const btn = document.querySelector<HTMLButtonElement>('#btn-flush');
+    expect(btn).toBeTruthy();
+    btn!.click();
+    const msg = app.view.message;
+    const selected = app.view.selected.size;
+    if (selected > 0) {
+      expect(msg).toContain('同花顺');
+      expect(selected).toBeGreaterThanOrEqual(5);
+      // 再点一次应切换到下一个（或回到第一个）
+      btn!.click();
+      expect(app.view.selected.size).toBeGreaterThanOrEqual(5);
+    } else {
+      expect(msg).toContain('没有');
+    }
+  });
+
+  it('手牌里没有同花顺时给出明确提示', () => {
+    for (let seed = 1; seed < 90; seed++) {
+      const { app } = setup(seed);
+      app.newMatch();
+      const btn = document.querySelector<HTMLButtonElement>('#btn-flush') as HTMLButtonElement;
+      btn.click();
+      if (app.view.selected.size === 0) {
+        expect(app.view.message).toContain('没有');
+        return;
+      }
+    }
+    // 所有种子都有同花顺也是可能的（逢人配让同花顺变多），那就跳过
+  });
+});

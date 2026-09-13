@@ -48,6 +48,7 @@ export interface Refs {
   btnHint: HTMLButtonElement;
   btnClear: HTMLButtonElement;
   btnSort: HTMLButtonElement;
+  btnFlush: HTMLButtonElement;
   btnGroup: HTMLButtonElement;
   btnUngroup: HTMLButtonElement;
   modal: HTMLElement;
@@ -110,8 +111,10 @@ function playRow(cards: readonly Card[], level: number, small = false): HTMLElem
 }
 
 export function comboSummary(combo: Combo): string {
-  const wild = combo.wildAs && combo.wildAs.length > 0 ? ' · 含配' : '';
-  return `${combo.label}${wild}`;
+  if (!combo.wildAs || combo.wildAs.length === 0) return combo.label;
+  // 明确写清逢人配当成了什么牌，玩家可以自己核对，不再是一句含糊的"含配"
+  const as = combo.wildAs.map((w) => `${SUIT_SYMBOL[w.suit]}${rankText(w.rank)}`).join('、');
+  return `${combo.label} · 配当${as}`;
 }
 
 export function renderApp(refs: Refs, game: GuandanGame, state: ViewState): void {
@@ -454,6 +457,7 @@ function renderActions(refs: Refs, game: GuandanGame, state: ViewState): void {
     refs.btnHint.hidden = true;
     refs.btnClear.hidden = true;
     refs.btnSort.hidden = true;
+    refs.btnFlush.hidden = true;
     refs.btnGroup.hidden = true;
     refs.btnUngroup.hidden = true;
     return;
@@ -461,6 +465,7 @@ function renderActions(refs: Refs, game: GuandanGame, state: ViewState): void {
   refs.btnPlay.hidden = false;
   refs.btnClear.hidden = false;
   refs.btnSort.hidden = false;
+  refs.btnFlush.hidden = false;
   refs.btnGroup.hidden = false;
   refs.btnUngroup.hidden = false;
   const returning = state.mode === 'return';
