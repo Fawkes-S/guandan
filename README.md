@@ -14,6 +14,10 @@
 
 <sub>手机竖屏（分组自动换行）：![移动端](docs/preview-mobile.png)</sub>
 
+### ▶ 在线直接玩：<https://fawkes-s.github.io/guandan/>
+
+手机浏览器打开后「添加到主屏幕」即可装成 App，装完**离线也能玩**。
+
 ![风格](https://img.shields.io/badge/style-%E6%B0%B4%E5%A2%A8%E6%9E%81%E7%AE%80-b23a2f) ![deps](https://img.shields.io/badge/runtime%20deps-0-4a6b58) ![tests](https://img.shields.io/badge/tests-99%20passed-4a6b58)
 
 ---
