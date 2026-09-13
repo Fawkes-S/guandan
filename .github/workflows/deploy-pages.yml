@@ -23,7 +23,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # jsdom 30 依赖的 undici 需要较新的 Node（markAsUncloneable），
+          # 用 20 会让两个 jsdom 测试文件在加载阶段就崩掉。
+          node-version: 24
           cache: npm
       - run: npm ci
       - run: npm test
