@@ -1,5 +1,6 @@
 import './style.css';
 import { mount } from './app';
+import { sfx } from './sound';
 
 const root = document.getElementById('app');
 if (!root) throw new Error('缺少 #app 容器');
@@ -28,7 +29,7 @@ if ('serviceWorker' in navigator) {
 
 // 开发期把实例挂到 window，方便调试与自动化对局分析
 if (import.meta.env.DEV) {
-  (window as unknown as { __guandan?: unknown }).__guandan = app;
+  (window as unknown as { __guandan?: unknown }).__guandan = Object.assign(app, { sfx });
 }
 
 // ?sort=combo 启动即用「按牌型」理牌

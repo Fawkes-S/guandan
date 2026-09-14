@@ -4,6 +4,7 @@ import type { Card } from '../core/types';
 import type { GuandanGame } from '../core/engine';
 import type { Replay } from './replay';
 import { cardEl } from './render';
+import { SFX_LABELS, type SfxName } from './sound';
 
 export type DrawerTab = 'log' | 'count' | 'help';
 
@@ -159,7 +160,15 @@ export const HELP_ITEMS: Array<[string, string]> = [
   ['Esc', '清空选牌 / 关闭弹层'],
 ];
 
-export function renderHelpPanel(container: HTMLElement): void {
+export interface SoundPanelOptions {
+  soundOn: boolean;
+  volume: number;
+  onToggle: (on: boolean) => void;
+  onVolume: (v: number) => void;
+  onPreview: (name: SfxName) => void;
+}
+
+export function renderHelpPanel(container: HTMLElement, sound?: SoundPanelOptions): void {
   container.innerHTML = '';
   const list = document.createElement('div');
   list.className = 'help-list';
@@ -174,6 +183,49 @@ export function renderHelpPanel(container: HTMLElement): void {
     list.appendChild(row);
   }
   container.appendChild(list);
+
+  if (sound) {
+    const box = document.createElement('div');
+    box.className = 'sound-box';
+
+    const head = document.createElement('div');
+    head.className = 'sound-head';
+    const label = document.createElement('b');
+    label.textContent = '音效';
+    const toggle = document.createElement('button');
+    toggle.className = 'btn btn-mini';
+    toggle.textContent = sound.soundOn ? '开' : '关';
+    toggle.addEventListener('click', () => sound.onToggle(!sound.soundOn));
+    const vol = document.createElement('input');
+    vol.type = 'range';
+    vol.min = '0';
+    vol.max = '100';
+    vol.value = String(Math.round(sound.volume * 100));
+    vol.className = 'sound-vol';
+    vol.setAttribute('aria-label', '音量');
+    vol.addEventListener('input', () => sound.onVolume(Number(vol.value) / 100));
+    head.append(label, toggle, vol);
+    box.appendChild(head);
+
+    const grid = document.createElement('div');
+    grid.className = 'sound-grid';
+    for (const [name, text] of SFX_LABELS) {
+      const b = document.createElement('button');
+      b.className = 'btn btn-mini sound-try';
+      b.textContent = text;
+      b.addEventListener('click', () => sound.onPreview(name));
+      grid.appendChild(b);
+    }
+    box.appendChild(grid);
+
+    const tip = document.createElement('div');
+    tip.className = 'panel-tip';
+    tip.style.marginTop = '8px';
+    tip.textContent = '点任意一条试听。全部为实时合成，不含任何音频文件。';
+    box.appendChild(tip);
+
+    container.appendChild(box);
+  }
 
   const rules = document.createElement('div');
   rules.className = 'panel-tip';
