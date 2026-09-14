@@ -1805,3 +1805,18 @@ body::before {
 .sound-try:active {
   transform: translateY(1px);
 }
+
+.sound-packs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.sound-packs .btn-mini {
+  flex: 1;
+  text-align: center;
+}
+.btn.btn-mini.active {
+  color: var(--paper-2);
+  background: var(--cinnabar);
+  border-color: var(--cinnabar);
+}

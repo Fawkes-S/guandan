@@ -32,7 +32,7 @@ import {
   type Refs,
   type ViewState,
 } from './render';
-import { sfx } from './sound';
+import { sfx, type SoundPack } from './sound';
 
 const SAVE_KEY = 'guandan.save.v1';
 const SETTINGS_KEY = 'guandan.settings.v1';
@@ -54,6 +54,7 @@ export interface AppOptions {
 interface Settings {
   sound: boolean;
   volume: number;
+  soundPack: SoundPack;
   motion: boolean;
 }
 
@@ -77,7 +78,7 @@ export class App {
   private difficulty: Difficulty;
   private options: AppOptions;
   private sortMode: SortMode = 'rank';
-  private settings: Settings = { sound: true, volume: 0.6, motion: true };
+  private settings: Settings = { sound: true, volume: 0.6, soundPack: 'classic', motion: true };
 
   /** 出牌阶段开始时的手牌快照，用于复盘 */
   private roundInitialHands: Card[][] | null = null;
@@ -153,15 +154,16 @@ export class App {
   private loadSettings(): Settings {
     try {
       const raw = window.localStorage.getItem(SETTINGS_KEY);
-      if (!raw) return { sound: true, volume: 0.6, motion: true };
+      if (!raw) return { sound: true, volume: 0.6, soundPack: 'classic', motion: true };
       const parsed = JSON.parse(raw) as Partial<Settings>;
       return {
         sound: parsed.sound !== false,
         volume: typeof parsed.volume === 'number' ? Math.max(0, Math.min(1, parsed.volume)) : 0.6,
+        soundPack: parsed.soundPack === 'ink' ? 'ink' : 'classic',
         motion: parsed.motion !== false,
       };
     } catch {
-      return { sound: true, volume: 0.6, motion: true };
+      return { sound: true, volume: 0.6, soundPack: 'classic', motion: true };
     }
   }
 
@@ -176,6 +178,7 @@ export class App {
   private applySettings(): void {
     sfx.setEnabled(this.settings.sound);
     sfx.setVolume(this.settings.volume);
+    sfx.setPack(this.settings.soundPack);
     motion.enabled = this.settings.motion;
     this.root.classList.toggle('no-motion', !this.settings.motion);
   }
@@ -995,6 +998,18 @@ export class App {
       renderHelpPanel(body, {
         soundOn: this.settings.sound,
         volume: this.settings.volume,
+        pack: this.settings.soundPack,
+        onPack: (pack) => {
+          this.settings.soundPack = pack;
+          sfx.setPack(pack);
+          if (!this.settings.sound) {
+            this.settings.sound = true;
+            sfx.setEnabled(true);
+          }
+          this.saveSettings();
+          sfx.preview('play');
+          this.renderDrawer(true);
+        },
         onToggle: (on) => {
           this.settings.sound = on;
           sfx.setEnabled(on);
