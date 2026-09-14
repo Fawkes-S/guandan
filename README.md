@@ -309,6 +309,8 @@ guandan/
 
 - [`docs/PLAN.md`](docs/PLAN.md) — 完整开发计划、视觉方案、里程碑与验收标准
 - [`docs/RULES.md`](docs/RULES.md) — 规则基线与可配置分歧点
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — **架构说明**：分层、数据模型、规则引擎、牌型识别、构建分发，以及踩过的 10 个坑
+- [`docs/AI.md`](docs/AI.md) — **AI 策略剖析**：不是大模型，是「枚举 → 估值 → 打分」的传统博弈 AI；难度参数表、已知弱点、四档改进方案
 - [`docs/GITHUB.md`](docs/GITHUB.md) — 放到 GitHub 上：保存 / 管理 / 测试 / 发布全流程
 - [`docs/DEPLOY.md`](docs/DEPLOY.md) — 带走 / 分享 / 部署的完整方案
 - [`docs/PROGRESS.md`](docs/PROGRESS.md) — 实时进度与变更日志
