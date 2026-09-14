@@ -557,8 +557,7 @@ describe('悬浮查看本局出牌', () => {
     const pop = document.querySelector('.round-hover .round-pop');
     expect(pop).toBeTruthy();
     const text = pop!.textContent ?? '';
-    expect(text).toContain('本局出牌');
-    expect(text).toContain('第 1 轮');
+    expect(text).toContain('最近出牌');
     expect(app.game.history.length).toBeGreaterThan(0);
     // 每条记录都有轮次编号，且不递减
     const tricks = app.game.history.map((h) => h.trick);
@@ -570,7 +569,7 @@ describe('悬浮查看本局出牌', () => {
     app.newMatch();
     const pop = document.querySelector('.round-hover .round-pop');
     expect(pop).toBeTruthy();
-    expect(pop!.textContent).toContain('还没有人出牌');
+    expect(pop!.textContent).toContain('本局还没有出牌');
   });
 
   it('出牌后浮层内容会随之更新', () => {
@@ -580,6 +579,13 @@ describe('悬浮查看本局出牌', () => {
     autoHuman(app);
     vi.advanceTimersByTime(1000);
     const pop = document.querySelector('.round-hover .round-pop');
-    expect(pop!.textContent).not.toContain('还没有人出牌');
+    expect(pop!.textContent).not.toContain('本局还没有出牌');
+    // 只记最近几手：条目数不超过上限，且不包含过牌
+    const items = pop!.querySelectorAll('.pop-item');
+    expect(items.length).toBeGreaterThan(0);
+    expect(items.length).toBeLessThanOrEqual(5);
+    for (const it of Array.from(items)) {
+      expect(it.querySelectorAll('.pop-cards i').length).toBeGreaterThan(0);
+    }
   });
 });

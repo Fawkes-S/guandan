@@ -160,7 +160,7 @@ function renderHud(hud: HTMLElement, game: GuandanGame, state: ViewState): void 
     <span class="seal-badge">打 <b>${levelText(game.level)}</b></span>
     <span class="round-hover">
       第 <b>${game.round}</b> 局
-      ${trickHistoryHtml(game, state)}
+      ${recentPlaysHtml(game, state)}
     </span>
     <span>${myLabel} <b>${levelText(game.levels[myTeam])}</b></span>
     <span>${oppLabel} <b>${levelText(game.levels[oppTeam])}</b></span>
@@ -175,48 +175,36 @@ function renderHud(hud: HTMLElement, game: GuandanGame, state: ViewState): void 
 }
 
 /**
- * 悬浮在"第 N 局"上的历史出牌面板。
- * 纯 CSS `:hover` 控制显隐 —— 鼠标移上去出现、移开消失，不需要任何 JS 监听。
+ * 悬浮在"第 N 局"上的最近出牌。
+ *
+ * 只取**最近几手实际出的牌**（不含过牌、不含牌型名）——过牌和完整牌谱请到「操作 → 牌谱」看。
+ * 显隐交给纯 CSS `:hover`，所以鼠标移开即消失，不需要任何 JS 监听。
  */
-function trickHistoryHtml(game: GuandanGame, state: ViewState): string {
-  const groups: Array<{ trick: number; items: PlayRecord[] }> = [];
-  for (const rec of game.history) {
-    const no = rec.trick ?? 0;
-    const last = groups[groups.length - 1];
-    if (last && last.trick === no) last.items.push(rec);
-    else groups.push({ trick: no, items: [rec] });
+const RECENT_PLAY_COUNT = 5;
+
+function recentPlaysHtml(game: GuandanGame, state: ViewState): string {
+  const recent = game.history.filter((r) => r.combo !== null).slice(-RECENT_PLAY_COUNT);
+  if (recent.length === 0) {
+    return `<div class="round-pop"><div class="pop-title">最近出牌</div><div class="pop-empty">本局还没有出牌</div></div>`;
   }
-  if (groups.length === 0) {
-    return `<div class="round-pop"><div class="pop-head">本局出牌</div><div class="pop-empty">还没有人出牌</div></div>`;
-  }
-  const recent = groups.slice(-6);
-  const skipped = groups.length - recent.length;
-  const rows = recent
-    .map((g) => {
-      const plays = g.items
-        .map((r) => {
-          const who = seatName(r.player, state);
-          const me = r.player === state.human ? ' pop-me' : '';
-          if (!r.combo) return `<div class="pop-play${me}"><b>${who}</b><i class="pop-pass">不要</i></div>`;
-          const cards = r.combo.cards
-            .map(
-              (c) =>
-                `<span class="pop-card ${c.suit === 'H' || c.suit === 'D' ? 'red' : ''}">${
-                  SUIT_SYMBOL[c.suit]
-                }${rankText(c.rank)}</span>`,
-            )
-            .join('');
-          return `<div class="pop-play${me}"><b>${who}</b><span class="pop-cards">${cards}</span><i class="pop-kind">${r.combo.label}</i></div>`;
-        })
+  const items = recent
+    .map((r) => {
+      const me = r.player === state.human ? ' pop-me' : '';
+      const cards = r.combo!.cards
+        .map(
+          (c) =>
+            `<i class="${c.suit === 'H' || c.suit === 'D' ? 'red' : ''}">${SUIT_SYMBOL[c.suit]}${rankText(
+              c.rank,
+            )}</i>`,
+        )
         .join('');
-      return `<div class="pop-trick"><div class="pop-trick-no">第 ${g.trick + 1} 轮</div><div class="pop-plays">${plays}</div></div>`;
+      return `<div class="pop-item${me}"><span class="pop-who">${seatName(
+        r.player,
+        state,
+      )}</span><span class="pop-cards">${cards}</span></div>`;
     })
     .join('');
-  const more = skipped > 0 ? `<div class="pop-more">更早的 ${skipped} 轮已折叠</div>` : '';
-  return `<div class="round-pop">
-    <div class="pop-head">本局出牌 <span>共 ${groups.length} 轮</span></div>
-    <div class="pop-body">${more}${rows}</div>
-  </div>`;
+  return `<div class="round-pop"><div class="pop-title">最近出牌</div>${items}</div>`;
 }
 
 function renderSeats(seats: HTMLElement[], game: GuandanGame, state: ViewState): void {
