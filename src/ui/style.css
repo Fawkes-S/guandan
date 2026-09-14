@@ -872,6 +872,27 @@ body::before {
 .card.static {
   cursor: default;
 }
+.card.tiny {
+  --cw: 34px;
+  --ch: 48px;
+}
+.card.tiny .corner {
+  top: 3px;
+  left: 4px;
+}
+.card.tiny .corner b {
+  font-size: 11px;
+}
+.card.tiny .corner i {
+  font-size: 9px;
+}
+.card.tiny .pip {
+  font-size: 12px;
+}
+.card.tiny .seal {
+  font-size: 9px;
+  padding: 0 2px;
+}
 .card.small {
   --cw: 46px;
   --ch: 66px;
@@ -1807,8 +1828,8 @@ body::before {
 }
 
 /* ------------------------------------------------- 悬浮查看本局出牌历史 */
-/* 取水墨的路子：不画边框、不做圆角卡片，只用一层极淡的纸色与一枚散开的墨影，
-   靠留白和字距撑住结构，而不是靠线框。 */
+/* 直接沿用牌谱的配方（纸卡 + 纸色标题带 + 虚线分隔行 + 迷你牌面），
+   让浮层看起来就是游戏自己的一部分，而不是外挂的提示框。 */
 .round-hover {
   position: relative;
   cursor: help;
@@ -1822,84 +1843,90 @@ body::before {
 .round-pop {
   display: none;
   position: absolute;
-  top: calc(100% + 2px);
+  /* 与标记留 5px 让尖角露出来；尖角本身是面板的伪元素，
+     属于悬浮区域的一部分，所以鼠标穿过这条缝不会把浮层断掉。 */
+  top: calc(100% + 5px);
   left: 50%;
   transform: translateX(-50%);
   z-index: 80;
-  /* width:max-content 是关键：绝对定位的收缩宽度是按"标记本身"（很窄）算的，
-     不写它面板会被挤窄，四张牌就折行了。 */
   width: max-content;
-  min-width: 116px;
-  max-width: 236px;
-  padding: 11px 16px 12px;
   background: var(--paper-2);
-  border-radius: 2px;
-  box-shadow:
-    0 1px 2px rgba(28, 28, 30, 0.04),
-    0 10px 30px rgba(28, 28, 30, 0.085);
+  border: 1px solid var(--fade);
+  border-radius: 8px;
+  box-shadow: 0 16px 34px rgba(28, 28, 30, 0.13);
   text-align: left;
-  font-size: 12px;
-  font-weight: 400;
-  color: var(--ink-3);
-  letter-spacing: 0;
-  line-height: 1;
   cursor: default;
 }
-/* 标记与面板之间不能留缝，否则鼠标穿过去的那一刻浮层就断了 */
-.round-pop::before {
+/* 指回标记的小尖角，让它像"挂"在局数上而不是飘在空中。
+   注意：面板不能设 overflow:hidden，否则尖角会被裁掉。 */
+.round-pop::after {
   content: '';
   position: absolute;
-  left: 0;
-  right: 0;
   top: -6px;
-  height: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top: none;
+  border-bottom-color: var(--paper-3);
+  filter: drop-shadow(0 -1px 0 var(--fade));
 }
 .round-hover:hover .round-pop {
   display: block;
 }
 
-.pop-title {
-  font-family: var(--serif);
-  font-size: 11px;
-  color: var(--ink-4);
-  letter-spacing: 3px;
-  padding-bottom: 7px;
-  margin-bottom: 6px;
-  border-bottom: 1px solid var(--paper-3);
-}
-.pop-item {
+.pop-head {
   display: flex;
-  align-items: baseline;
-  gap: 10px;
-  padding: 3px 0;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: var(--ink-3);
+  padding: 6px 12px;
+  background: var(--paper-3);
+  border-bottom: 1px solid var(--fade);
+  border-radius: 7px 7px 0 0;
+}
+/* 标题前一枚小朱印，给整块纸片一个视觉起点 */
+.pop-head::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  background: var(--cinnabar);
+  border-radius: 1px;
+  opacity: 0.85;
+  flex: 0 0 auto;
+}
+.pop-body {
+  max-height: 54vh;
+  overflow-y: auto;
+  border-radius: 0 0 7px 7px;
+}
+.pop-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 12px 5px 11px;
+  border-bottom: 1px dashed rgba(216, 212, 200, 0.7);
+}
+.pop-row:last-child {
+  border-bottom: none;
+}
+.pop-row.me {
+  background: rgba(178, 58, 47, 0.045);
 }
 .pop-who {
-  flex: 0 0 30px;
-  font-family: var(--serif);
-  font-size: 11px;
-  color: var(--ink-4);
+  flex: 0 0 26px;
+  font-size: 12px;
+  color: var(--ink-3);
   letter-spacing: 1px;
 }
-.pop-item.pop-me .pop-who {
-  color: var(--cinnabar);
-}
-.pop-cards {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1px 6px;
-}
-.pop-cards i {
-  font-style: normal;
-  font-family: var(--mono);
-  font-size: 11.5px;
-  letter-spacing: -0.2px;
-  color: var(--ink-2);
-}
-.pop-cards i.red {
-  color: var(--cinnabar);
+/* 叠太多整张牌就只剩细条了 —— 小尺寸下留出足够的一张脸 */
+.pop-row .card + .card {
+  margin-left: -13px;
 }
 .pop-empty {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--ink-4);
   letter-spacing: 1px;
+  padding: 10px 12px;
 }

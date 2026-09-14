@@ -580,12 +580,15 @@ describe('悬浮查看本局出牌', () => {
     vi.advanceTimersByTime(1000);
     const pop = document.querySelector('.round-hover .round-pop');
     expect(pop!.textContent).not.toContain('本局还没有出牌');
-    // 只记最近几手：条目数不超过上限，且不包含过牌
-    const items = pop!.querySelectorAll('.pop-item');
-    expect(items.length).toBeGreaterThan(0);
-    expect(items.length).toBeLessThanOrEqual(5);
-    for (const it of Array.from(items)) {
-      expect(it.querySelectorAll('.pop-cards i').length).toBeGreaterThan(0);
+    // 只记最近几手：条目数不超过上限，每行都是真实牌面（不是"不要"）
+    const rows = pop!.querySelectorAll('.pop-row');
+    expect(rows.length).toBeGreaterThan(0);
+    expect(rows.length).toBeLessThanOrEqual(4);
+    for (const row of Array.from(rows)) {
+      expect(row.querySelectorAll('.card').length).toBeGreaterThan(0);
+      expect(row.querySelector('.pop-who')?.textContent).toBeTruthy();
     }
+    // 牌面用的是和牌谱一样的迷你牌，而不是纯文字
+    expect(pop!.querySelector('.pop-row .mini-row .card.tiny')).toBeTruthy();
   });
 });

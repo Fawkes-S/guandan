@@ -177,34 +177,54 @@ function renderHud(hud: HTMLElement, game: GuandanGame, state: ViewState): void 
 /**
  * 悬浮在"第 N 局"上的最近出牌。
  *
- * 只取**最近几手实际出的牌**（不含过牌、不含牌型名）——过牌和完整牌谱请到「操作 → 牌谱」看。
- * 显隐交给纯 CSS `:hover`，所以鼠标移开即消失，不需要任何 JS 监听。
+ * 视觉上刻意做成**牌谱的缩微版**：同一套纸卡 + 纸色标题带 + 虚线分隔行 + 迷你牌面
+ * （`.card.small` + `.mini-row` 的扇形重叠），所以它看起来就是游戏自己的一部分，
+ * 而不是一个外挂的提示框。
+ *
+ * 只取最近几手实际出的牌（不含过牌）；完整牌谱请到「操作 → 牌谱」。
+ * 显隐交给纯 CSS `:hover`，鼠标移开即消失，不需要任何 JS 监听。
  */
-const RECENT_PLAY_COUNT = 5;
+const RECENT_PLAY_COUNT = 4;
+
+/** 与 cardEl(card, level, { small: true, interactive: false }) 等价的 HTML 版本 */
+function miniCardHtml(card: Card, level: number): string {
+  const cls = ['card', 'tiny', 'static'];
+  const red = card.suit === 'H' || card.suit === 'D';
+  if (red) cls.push('red');
+  if (card.rank === level) cls.push('level');
+  if (isWild(card, level)) cls.push('wild');
+  let corner: string;
+  let pip: string;
+  if (card.rank >= 15) {
+    const isBig = card.rank === 16;
+    cls.push('joker', isBig ? 'big' : 'small');
+    if (isBig) cls.push('red');
+    corner = `<b>${isBig ? '大' : '小'}</b><i>王</i>`;
+    pip = '★';
+  } else {
+    corner = `<b>${rankText(card.rank)}</b><i>${SUIT_SYMBOL[card.suit]}</i>`;
+    pip = SUIT_SYMBOL[card.suit];
+  }
+  const seal = isWild(card, level) ? '<span class="seal">配</span>' : '';
+  return `<div class="${cls.join(' ')}"><span class="corner">${corner}</span><span class="pip">${pip}</span>${seal}</div>`;
+}
 
 function recentPlaysHtml(game: GuandanGame, state: ViewState): string {
   const recent = game.history.filter((r) => r.combo !== null).slice(-RECENT_PLAY_COUNT);
-  if (recent.length === 0) {
-    return `<div class="round-pop"><div class="pop-title">最近出牌</div><div class="pop-empty">本局还没有出牌</div></div>`;
-  }
-  const items = recent
-    .map((r) => {
-      const me = r.player === state.human ? ' pop-me' : '';
-      const cards = r.combo!.cards
-        .map(
-          (c) =>
-            `<i class="${c.suit === 'H' || c.suit === 'D' ? 'red' : ''}">${SUIT_SYMBOL[c.suit]}${rankText(
-              c.rank,
-            )}</i>`,
-        )
-        .join('');
-      return `<div class="pop-item${me}"><span class="pop-who">${seatName(
-        r.player,
-        state,
-      )}</span><span class="pop-cards">${cards}</span></div>`;
-    })
-    .join('');
-  return `<div class="round-pop"><div class="pop-title">最近出牌</div>${items}</div>`;
+  const body =
+    recent.length === 0
+      ? '<div class="pop-empty">本局还没有出牌</div>'
+      : recent
+          .map((r) => {
+            const me = r.player === state.human ? ' me' : '';
+            const cards = r.combo!.cards.map((c) => miniCardHtml(c, game.level)).join('');
+            return `<div class="pop-row${me}"><span class="pop-who">${seatName(
+              r.player,
+              state,
+            )}</span><div class="mini-row">${cards}</div></div>`;
+          })
+          .join('');
+  return `<div class="round-pop"><div class="pop-head">最近出牌</div><div class="pop-body">${body}</div></div>`;
 }
 
 function renderSeats(seats: HTMLElement[], game: GuandanGame, state: ViewState): void {
