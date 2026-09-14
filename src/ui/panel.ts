@@ -4,7 +4,7 @@ import type { Card } from '../core/types';
 import type { GuandanGame } from '../core/engine';
 import type { Replay } from './replay';
 import { cardEl } from './render';
-import { SFX_LABELS, SOUND_PACKS, type SfxName, type SoundPack } from './sound';
+import { SFX_LABELS, type SfxName } from './sound';
 
 export type DrawerTab = 'log' | 'count' | 'help';
 
@@ -163,10 +163,8 @@ export const HELP_ITEMS: Array<[string, string]> = [
 export interface SoundPanelOptions {
   soundOn: boolean;
   volume: number;
-  pack: SoundPack;
   onToggle: (on: boolean) => void;
   onVolume: (v: number) => void;
-  onPack: (pack: SoundPack) => void;
   onPreview: (name: SfxName) => void;
 }
 
@@ -208,18 +206,6 @@ export function renderHelpPanel(container: HTMLElement, sound?: SoundPanelOption
     vol.addEventListener('input', () => sound.onVolume(Number(vol.value) / 100));
     head.append(label, toggle, vol);
     box.appendChild(head);
-
-    const packs = document.createElement('div');
-    packs.className = 'sound-packs';
-    for (const [id, text] of SOUND_PACKS) {
-      const b = document.createElement('button');
-      b.className = 'btn btn-mini sound-pack';
-      if (id === sound.pack) b.classList.add('active');
-      b.textContent = text;
-      b.addEventListener('click', () => sound.onPack(id));
-      packs.appendChild(b);
-    }
-    box.appendChild(packs);
 
     const grid = document.createElement('div');
     grid.className = 'sound-grid';

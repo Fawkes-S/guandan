@@ -1806,17 +1806,108 @@ body::before {
   transform: translateY(1px);
 }
 
-.sound-packs {
+
+/* ------------------------------------------------- 悬浮查看本局出牌历史 */
+.round-hover {
+  position: relative;
+  cursor: help;
+  border-bottom: 1px dashed var(--fade);
+}
+.round-pop {
+  display: none;
+  position: absolute;
+  top: calc(100% - 2px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 80;
+  width: max-content;
+  min-width: 200px;
+  max-width: 340px;
+  max-height: 52vh;
+  overflow-y: auto;
+  padding: 10px 12px;
+  background: var(--paper-2);
+  border: 1px solid var(--fade);
+  border-radius: 9px;
+  box-shadow: 0 14px 36px rgba(28, 28, 30, 0.16);
+  text-align: left;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink-3);
+  letter-spacing: 0;
+  cursor: default;
+}
+/* 纯 CSS 显隐：移上去出现，移开消失，不需要任何 JS 监听 */
+.round-hover:hover .round-pop {
+  display: block;
+}
+.pop-head {
+  font-family: var(--serif);
+  font-size: 12px;
+  color: var(--ink-2);
+  letter-spacing: 1.5px;
+  padding-bottom: 6px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid var(--fade);
   display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.pop-head span {
+  color: var(--ink-4);
+  letter-spacing: 0;
+}
+.pop-empty,
+.pop-more {
+  color: var(--ink-4);
+  font-size: 11px;
+  padding: 4px 0;
+}
+.pop-trick + .pop-trick {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--paper-3);
+}
+.pop-trick-no {
+  font-size: 11px;
+  color: var(--ink-4);
+  letter-spacing: 1px;
+  margin-bottom: 3px;
+}
+.pop-play {
+  display: flex;
+  align-items: baseline;
   gap: 6px;
-  margin-bottom: 8px;
+  padding: 1px 0;
 }
-.sound-packs .btn-mini {
-  flex: 1;
-  text-align: center;
+.pop-play b {
+  flex: 0 0 34px;
+  font-weight: 500;
+  color: var(--ink-3);
 }
-.btn.btn-mini.active {
-  color: var(--paper-2);
-  background: var(--cinnabar);
-  border-color: var(--cinnabar);
+.pop-play.pop-me b {
+  color: var(--cinnabar);
+}
+.pop-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+.pop-card {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink);
+}
+.pop-card.red {
+  color: var(--cinnabar);
+}
+.pop-kind,
+.pop-pass {
+  font-style: normal;
+  font-size: 11px;
+  color: var(--ink-4);
+}
+.pop-pass {
+  color: var(--ink-4);
+  opacity: 0.75;
 }

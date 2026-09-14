@@ -4,6 +4,7 @@ import { applyRoundResult } from '../core/scoring';
 import { planTribute, canAntiTribute, returnCandidates, tributeCard } from '../core/tribute';
 import { orderValue } from '../core/cards';
 import { DEFAULT_RULES, type RuleConfig } from '../core/rules';
+import { enumeratePlays } from '../core/candidates';
 import { ComboType } from '../core/types';
 import { C, H, playRound, stepRandom } from './helpers';
 import { mulberry32 } from '../core/cards';
@@ -393,5 +394,60 @@ describe('双下提前结束', () => {
     g.play(1, [g.hands[1][0]]); // 1 是对方
     expect(g.finishOrder).toEqual([0, 1]);
     expect(g.phase).toBe('playing');
+  });
+});
+
+describe('出牌记录的轮次标记', () => {
+  it('每轮（一圈）的记录共享同一个 trick 编号，轮次递增', () => {
+    const g = new GuandanGame({}, 4321);
+    g.startRound();
+    // 打完若干手，检查 trick 单调不减且每轮内一致
+    let guard = 0;
+    while (g.phase === 'playing' && guard++ < 400) {
+      const p = g.current;
+      const opts = enumeratePlays(g.hands[p], g.level, g.target, g.rules);
+      if (opts.length === 0) {
+        g.pass(p);
+        continue;
+      }
+      g.play(p, opts[0].cards);
+    }
+    expect(g.history.length).toBeGreaterThan(6);
+    const tricks = g.history.map((h) => h.trick);
+    // 不递减
+    for (let i = 1; i < tricks.length; i++) expect(tricks[i]).toBeGreaterThanOrEqual(tricks[i - 1]);
+    // 至少跨过 2 轮
+    expect(new Set(tricks).size).toBeGreaterThanOrEqual(2);
+    // 最新一轮的编号必须等于「轮数 - 1」
+    expect(Math.max(...tricks)).toBe(new Set(tricks).size - 1);
+  });
+
+  it('新的一局会把轮次归零', () => {
+    const g = new GuandanGame({}, 99);
+    g.startRound();
+    expect(g.history).toHaveLength(0);
+    // 第 1 局没有进贡，可以直接出牌
+    const p = g.current;
+    g.play(p, enumeratePlays(g.hands[p], g.level, null, g.rules)[0].cards);
+    expect(g.history[0].trick).toBe(0);
+
+    // 打完一局再开下一局：历史清空；此时可能是进贡/还贡阶段，轮到出牌时轮次必须从 0 开始
+    let guard = 0;
+    while (g.phase === 'playing' && guard++ < 600) {
+      const cur = g.current;
+      const opts = enumeratePlays(g.hands[cur], g.level, g.target, g.rules);
+      if (opts.length === 0) g.pass(cur);
+      else g.play(cur, opts[0].cards);
+    }
+    if (g.phase === 'roundEnd') {
+      g.startRound();
+      expect(g.history).toHaveLength(0);
+      const phaseNow: string = g.phase;
+      if (phaseNow === 'playing') {
+        const cur = g.current;
+        g.play(cur, enumeratePlays(g.hands[cur], g.level, null, g.rules)[0].cards);
+        expect(g.history[0].trick).toBe(0);
+      }
+    }
   });
 });

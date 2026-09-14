@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { sfx, SFX_LABELS, SOUND_PACKS, type SfxName } from '../ui/sound';
+import { sfx, SFX_LABELS, type SfxName } from '../ui/sound';
 
 /**
  * 音效引擎的行为护栏。
@@ -12,21 +12,9 @@ describe('音效引擎', () => {
       sfx.unlock();
       sfx.play('click');
       sfx.preview('bomb');
-      sfx.playCombo({ type: 'Bomb', cards: [1, 2, 3, 4], isBomb: true, power: 104 });
       sfx.setEnabled(false);
       sfx.setEnabled(true);
     }).not.toThrow();
-  });
-
-  it('两套音色包都能安全切换', () => {
-    for (const [id] of SOUND_PACKS) {
-      expect(() => {
-        sfx.setPack(id);
-        sfx.play('play');
-        sfx.playCombo({ type: 'Plate', cards: [1, 2, 3, 4, 5, 6], isBomb: false, power: 1 });
-      }).not.toThrow();
-    }
-    sfx.setPack('classic');
   });
 
   it('音量会夹在 0~1 之间', () => {

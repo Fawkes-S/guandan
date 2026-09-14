@@ -544,3 +544,42 @@ describe('帮助面板完整性', () => {
     expect(src).toContain(`' ' || key === 'spacebar' || key === 'p'`);
   });
 });
+
+describe('悬浮查看本局出牌', () => {
+  it('局数标记上带出牌历史浮层，按轮分组', () => {
+    const { app } = setup(21);
+    app.newMatch();
+    for (let i = 0; i < 60 && app.game.history.length < 8; i++) {
+      pumpUntilHuman(app);
+      autoHuman(app);
+      vi.advanceTimersByTime(1000);
+    }
+    const pop = document.querySelector('.round-hover .round-pop');
+    expect(pop).toBeTruthy();
+    const text = pop!.textContent ?? '';
+    expect(text).toContain('本局出牌');
+    expect(text).toContain('第 1 轮');
+    expect(app.game.history.length).toBeGreaterThan(0);
+    // 每条记录都有轮次编号，且不递减
+    const tricks = app.game.history.map((h) => h.trick);
+    for (let i = 1; i < tricks.length; i++) expect(tricks[i]).toBeGreaterThanOrEqual(tricks[i - 1]);
+  });
+
+  it('还没出牌时给出空态提示', () => {
+    const { app } = setup(22);
+    app.newMatch();
+    const pop = document.querySelector('.round-hover .round-pop');
+    expect(pop).toBeTruthy();
+    expect(pop!.textContent).toContain('还没有人出牌');
+  });
+
+  it('出牌后浮层内容会随之更新', () => {
+    const { app } = setup(23);
+    app.newMatch();
+    pumpUntilHuman(app);
+    autoHuman(app);
+    vi.advanceTimersByTime(1000);
+    const pop = document.querySelector('.round-hover .round-pop');
+    expect(pop!.textContent).not.toContain('还没有人出牌');
+  });
+});

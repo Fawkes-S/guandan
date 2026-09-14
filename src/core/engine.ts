@@ -19,6 +19,8 @@ export interface PlayRecord {
   player: number;
   cards: Card[];
   combo: Combo | null;
+  /** 第几轮（一圈牌）—— 界面按轮分组展示历史出牌用 */
+  trick: number;
 }
 
 export type GameEvent =
@@ -90,6 +92,8 @@ export class GuandanGame {
   lastPlay: { player: number; combo: Combo } | null = null;
   passCount = 0;
   finishOrder: number[] = [];
+  /** 当前是第几轮（一圈）；每轮结束 +1，开局归零 */
+  private trickNo = 0;
   trickPlays: PlayRecord[] = [];
   lastTrickPlays: PlayRecord[] = [];
   history: PlayRecord[] = [];
@@ -165,6 +169,7 @@ export class GuandanGame {
     this.round += 1;
     this.finishOrder = [];
     this.history = [];
+    this.trickNo = 0;
     this.trickPlays = [];
     this.lastTrickPlays = [];
     this.lastPlay = null;
@@ -339,7 +344,7 @@ export class GuandanGame {
     this.hands[player] = hand.filter((c) => !ids.has(c.id));
     this.lastPlay = { player, combo };
     this.passCount = 0;
-    const record: PlayRecord = { player, cards: cards.slice(), combo };
+    const record: PlayRecord = { player, cards: cards.slice(), combo, trick: this.trickNo };
     this.trickPlays.push(record);
     this.history.push(record);
     this.playedPool.push(...cards);
@@ -365,7 +370,7 @@ export class GuandanGame {
   pass(player: number): void {
     if (!this.canPass(player)) throw new Error('当前不能过牌');
     this.passCount += 1;
-    const record: PlayRecord = { player, cards: [], combo: null };
+    const record: PlayRecord = { player, cards: [], combo: null, trick: this.trickNo };
     this.trickPlays.push(record);
     // 过牌同样记入完整牌谱，复盘时用于还原每一手的边界
     this.history.push(record);
@@ -394,6 +399,7 @@ export class GuandanGame {
     }
     this.lastTrickPlays = this.trickPlays;
     this.trickPlays = [];
+    this.trickNo += 1;
     this.passCount = 0;
     this.lastPlay = null;
     this.current = leader;

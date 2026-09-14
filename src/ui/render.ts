@@ -158,7 +158,10 @@ function renderHud(hud: HTMLElement, game: GuandanGame, state: ViewState): void 
   const atA = game.levels[game.levelTeam] === 14;
   hud.innerHTML = `
     <span class="seal-badge">打 <b>${levelText(game.level)}</b></span>
-    <span>第 <b>${game.round}</b> 局</span>
+    <span class="round-hover">
+      第 <b>${game.round}</b> 局
+      ${trickHistoryHtml(game, state)}
+    </span>
     <span>${myLabel} <b>${levelText(game.levels[myTeam])}</b></span>
     <span>${oppLabel} <b>${levelText(game.levels[oppTeam])}</b></span>
     ${
@@ -169,6 +172,51 @@ function renderHud(hud: HTMLElement, game: GuandanGame, state: ViewState): void 
         : ''
     }
   `;
+}
+
+/**
+ * 悬浮在"第 N 局"上的历史出牌面板。
+ * 纯 CSS `:hover` 控制显隐 —— 鼠标移上去出现、移开消失，不需要任何 JS 监听。
+ */
+function trickHistoryHtml(game: GuandanGame, state: ViewState): string {
+  const groups: Array<{ trick: number; items: PlayRecord[] }> = [];
+  for (const rec of game.history) {
+    const no = rec.trick ?? 0;
+    const last = groups[groups.length - 1];
+    if (last && last.trick === no) last.items.push(rec);
+    else groups.push({ trick: no, items: [rec] });
+  }
+  if (groups.length === 0) {
+    return `<div class="round-pop"><div class="pop-head">本局出牌</div><div class="pop-empty">还没有人出牌</div></div>`;
+  }
+  const recent = groups.slice(-6);
+  const skipped = groups.length - recent.length;
+  const rows = recent
+    .map((g) => {
+      const plays = g.items
+        .map((r) => {
+          const who = seatName(r.player, state);
+          const me = r.player === state.human ? ' pop-me' : '';
+          if (!r.combo) return `<div class="pop-play${me}"><b>${who}</b><i class="pop-pass">不要</i></div>`;
+          const cards = r.combo.cards
+            .map(
+              (c) =>
+                `<span class="pop-card ${c.suit === 'H' || c.suit === 'D' ? 'red' : ''}">${
+                  SUIT_SYMBOL[c.suit]
+                }${rankText(c.rank)}</span>`,
+            )
+            .join('');
+          return `<div class="pop-play${me}"><b>${who}</b><span class="pop-cards">${cards}</span><i class="pop-kind">${r.combo.label}</i></div>`;
+        })
+        .join('');
+      return `<div class="pop-trick"><div class="pop-trick-no">第 ${g.trick + 1} 轮</div><div class="pop-plays">${plays}</div></div>`;
+    })
+    .join('');
+  const more = skipped > 0 ? `<div class="pop-more">更早的 ${skipped} 轮已折叠</div>` : '';
+  return `<div class="round-pop">
+    <div class="pop-head">本局出牌 <span>共 ${groups.length} 轮</span></div>
+    <div class="pop-body">${more}${rows}</div>
+  </div>`;
 }
 
 function renderSeats(seats: HTMLElement[], game: GuandanGame, state: ViewState): void {
